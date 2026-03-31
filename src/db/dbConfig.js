@@ -6,11 +6,6 @@ if (!MONGODB_URI) {
   throw new Error('Please define MONGODB_URI in your .env.local file')
 }
 
-/**
- * In Next.js (serverless / edge-ish), each hot reload or cold start
- * would create a new mongoose connection without this cache.
- * We store the promise on the global object so it survives module re-evaluation.
- */
 let cached = global._mongoose
 
 if (!cached) {

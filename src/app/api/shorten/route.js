@@ -4,7 +4,6 @@ import { connectDB } from '@/db/dbConfig'
 import { Url } from '@/models/UrlModel'
 import { nanoid } from 'nanoid'
 
-/* Validate that a string is a reachable-looking URL */
 function isValidUrl(str) {
   try {
     const url = new URL(str)
@@ -19,7 +18,6 @@ export async function POST(request) {
     const body = await request.json()
     const { originalUrl, customAlias } = body
 
-    /* ── 1. Validate input ── */
     if (!originalUrl || typeof originalUrl !== 'string') {
       return NextResponse.json({ error: 'URL is required.' }, { status: 400 })
     }
@@ -32,12 +30,9 @@ export async function POST(request) {
       )
     }
 
-    /* ── 2. Get optional Clerk user (anonymous shortening is allowed) ── */
     const { userId } = await auth()
 
     await connectDB()
-
-    /* ── 3. Handle custom alias ── */
     if (customAlias) {
       const alias = customAlias.trim().toLowerCase().replace(/\s+/g, '-')
 
@@ -55,18 +50,16 @@ export async function POST(request) {
       }
     }
 
-    /* ── 4. Generate unique short code ── */
     let shortCode
     let attempts = 0
     do {
-      shortCode = nanoid(6)   // e.g. "aB3xQ1"
+      shortCode = nanoid(6) 
       attempts++
       if (attempts > 10) {
         return NextResponse.json({ error: 'Could not generate a unique code. Try again.' }, { status: 500 })
       }
     } while (await Url.findOne({ shortCode }))
 
-    /* ── 5. Save to DB ── */
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
     const urlDoc = await Url.create({

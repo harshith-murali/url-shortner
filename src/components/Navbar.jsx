@@ -41,7 +41,6 @@ const NAV_LINKS = [
 export default function Navbar() {
   const { theme, toggle } = useTheme();
   const pathname = usePathname();
-  // ✅ useAuth works in client components in all Clerk versions
   const { isSignedIn, isLoaded } = useAuth();
 
   return (

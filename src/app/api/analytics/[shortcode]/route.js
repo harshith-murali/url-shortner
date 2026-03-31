@@ -25,7 +25,6 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Link not found." }, { status: 404 });
     }
 
-    // Cast to ObjectId so aggregation pipelines match correctly
     const urlId = new mongoose.Types.ObjectId(link._id);
     const count = await Click.countDocuments({ urlId });
     console.log("DEBUG urlId:", urlId, "type:", typeof urlId, "count:", count);

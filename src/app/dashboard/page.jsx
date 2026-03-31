@@ -1,11 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-// ✅ FIX: useAuth works in client components. useUser is also fine but
-// SignedIn / SignedOut are server-only in Clerk v6+.
 import { useAuth, SignInButton } from "@clerk/nextjs";
 
-/* ── Icons ── */
 const TrashIcon = () => (
   <svg
     width="14"
@@ -143,7 +140,6 @@ function CopyBtn({ text }) {
   );
 }
 
-/* ── Skeleton row ── */
 function SkeletonRow() {
   return (
     <tr>
@@ -168,7 +164,6 @@ function SkeletonRow() {
 }
 
 export default function DashboardPage() {
-  // ✅ useAuth is the correct hook for client components in Clerk v6+/v7
   const { isLoaded, isSignedIn } = useAuth();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
