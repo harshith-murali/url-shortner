@@ -1,5 +1,5 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ClerkThemeWrapper from "@/components/ClerkThemeWrapper";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 
@@ -11,23 +11,24 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        </head>
-        <body>
-          <ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body>
+        {/* ThemeProvider must wrap ClerkProvider so the theme context is available */}
+        <ThemeProvider>
+          <ClerkThemeWrapper>
             <Navbar />
             <main style={{ minHeight: "calc(100vh - 62px)" }}>
               {children}
             </main>
             <Footer />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          </ClerkThemeWrapper>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
 
