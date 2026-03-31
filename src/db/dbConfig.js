@@ -1,12 +1,31 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
-const connectDb = async () => {
-  try {
-    const connection = await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ MongoDB connected successfully");
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
+const MONGODB_URI = process.env.MONGODB_URI
+
+if (!MONGODB_URI) {
+  throw new Error('Please define MONGODB_URI in your .env.local file')
+}
+
+/**
+ * In Next.js (serverless / edge-ish), each hot reload or cold start
+ * would create a new mongoose connection without this cache.
+ * We store the promise on the global object so it survives module re-evaluation.
+ */
+let cached = global._mongoose
+
+if (!cached) {
+  cached = global._mongoose = { conn: null, promise: null }
+}
+
+export async function connectDB() {
+  if (cached.conn) return cached.conn
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+    })
   }
-};
 
-export default connectDb;
+  cached.conn = await cached.promise
+  return cached.conn
+}

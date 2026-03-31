@@ -53,8 +53,7 @@ urlSchema.methods.isExpired = function () {
   return new Date() > this.expiresAt;
 };
 
-urlSchema.index({ shortCode: 1 });
-urlSchema.index({ customAlias: 1 });
+
 urlSchema.index({ userId: 1, createdAt: -1 });
 
 const clickSchema = new mongoose.Schema(
