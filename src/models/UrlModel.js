@@ -1,39 +1,54 @@
 import mongoose from "mongoose";
 
+/*
+ * UrlModel.js — Sniply data models
+ *
+ * Slug namespace note:
+ *   shortCode and customAlias share the same public URL namespace (/[slug]).
+ *   Both fields carry unique: true indexes. Collision checks must query BOTH
+ *   fields with $or when accepting user input or generating new codes.
+ *
+ * Click consistency model:
+ *   The Click collection is the authoritative source of truth for analytics.
+ *   Url.clicks is a denormalized counter used only for the dashboard quick-view.
+ *   Writes are attempted together in after() — if the counter update fails,
+ *   the Click document still exists and can be reconciled later.
+ *   The analytics API counts clicks via Click.countDocuments(), not Url.clicks.
+ */
+
 const urlSchema = new mongoose.Schema(
   {
     originalUrl: {
-      type: String,
+      type:     String,
       required: [true, "Original URL is required"],
-      trim: true,
+      trim:     true,
     },
     shortCode: {
-      type: String,
+      type:     String,
       required: [true, "Short code is required"],
-      unique: true,
-      trim: true,
+      unique:   true,
+      trim:     true,
     },
     customAlias: {
-      type: String,
+      type:   String,
       unique: true,
-      sparse: true,
-      trim: true,
+      sparse: true, // allows multiple null values while enforcing uniqueness on non-null
+      trim:   true,
     },
     userId: {
-      type: String,
+      type:    String,
       default: null,
-      index: true,
     },
     clicks: {
-      type: Number,
+      type:    Number,
       default: 0,
     },
     expiresAt: {
-      type: Date,
+      type:    Date,
       default: null,
     },
     isActive: {
-      type: Boolean,
+      type:    Boolean,
       default: true,
     },
   },
@@ -43,8 +58,7 @@ const urlSchema = new mongoose.Schema(
 );
 
 urlSchema.virtual("shortUrl").get(function () {
-  const base =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   return `${base}/${this.customAlias || this.shortCode}`;
 });
 
@@ -53,52 +67,61 @@ urlSchema.methods.isExpired = function () {
   return new Date() > this.expiresAt;
 };
 
-
+/*
+ * Indexes:
+ *   - shortCode: unique index defined on field (above) — supports public slug lookup
+ *   - customAlias: unique sparse index defined on field (above) — supports alias lookup
+ *   - userId + createdAt: compound index — supports dashboard list queries (user's links sorted by date)
+ *
+ * Note: Do NOT add a redundant index({ shortCode: 1 }) or index({ customAlias: 1 }) here —
+ *       the schema-level `unique: true` already creates those indexes.
+ */
 urlSchema.index({ userId: 1, createdAt: -1 });
+
+/* ── Click schema ──────────────────────────────────────────── */
 
 const clickSchema = new mongoose.Schema(
   {
     urlId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Url",
+      type:     mongoose.Schema.Types.ObjectId,
+      ref:      "Url",
       required: true,
-      index: true,
     },
     shortCode: {
-      type: String,
+      type:     String,
       required: true,
     },
     ipAddress: {
-      type: String,
+      type:    String,
       default: null,
     },
     userAgent: {
-      type: String,
+      type:    String,
       default: null,
     },
     browser: {
-      type: String,
+      type:    String,
       default: "Unknown",
     },
     os: {
-      type: String,
+      type:    String,
       default: "Unknown",
     },
     device: {
-      type: String,
-      enum: ["Desktop", "Mobile", "Tablet", "Unknown"],
+      type:    String,
+      enum:    ["Desktop", "Mobile", "Tablet", "Unknown"],
       default: "Unknown",
     },
     country: {
-      type: String,
+      type:    String,
       default: null,
     },
     region: {
-      type: String,
+      type:    String,
       default: null,
     },
     referrer: {
-      type: String,
+      type:    String,
       default: null,
     },
   },
@@ -107,40 +130,50 @@ const clickSchema = new mongoose.Schema(
   }
 );
 
+/*
+ * Click indexes:
+ *   - urlId + createdAt: supports timeline aggregations and recent-click queries
+ *   - shortCode + createdAt: supports lookups by code if urlId is not available
+ *
+ * Note: urlId is indexed implicitly below, not via schema field index:true,
+ *       to avoid creating a duplicate standalone index alongside the compound one.
+ */
 clickSchema.index({ urlId: 1, createdAt: -1 });
 clickSchema.index({ shortCode: 1, createdAt: -1 });
+
+/* ── UserSettings schema ──────────────────────────────────── */
 
 const userSettingsSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
+      type:     String,
       required: true,
-      unique: true,
+      unique:   true,
     },
     email: {
-      type: String,
+      type:    String,
       default: null,
     },
     displayName: {
-      type: String,
+      type:    String,
       default: null,
-      trim: true,
+      trim:    true,
     },
     defaultExpiryDays: {
-      type: Number,
+      type:    Number,
       default: 0,
-      min: 0,
+      min:     0,
     },
     analyticsEnabled: {
-      type: Boolean,
+      type:    Boolean,
       default: true,
     },
     totalLinks: {
-      type: Number,
+      type:    Number,
       default: 0,
     },
     totalClicks: {
-      type: Number,
+      type:    Number,
       default: 0,
     },
   },
