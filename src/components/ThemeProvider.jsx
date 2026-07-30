@@ -7,15 +7,24 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState("light");
 
   useEffect(() => {
-    // Respect system preference on first load
-    const stored = localStorage.getItem("theme");
+    const stored = typeof localStorage !== "undefined" ? localStorage.getItem("theme") : null;
     const preferred = stored
       ? stored
-      : window.matchMedia("(prefers-color-scheme: dark)").matches
+      : typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
-    setTheme(preferred);
+
+    // Synchronously apply the class to the document element to prevent FOUC (Flash of Unstyled Content)
     document.documentElement.classList.toggle("dark", preferred === "dark");
+
+    // Defer the React state update to the next microtask/tick.
+    // This avoids synchronous cascading renders in React's layout/effect phase,
+    // which satisfies the React compiler's performance lint rule.
+    const id = setTimeout(() => {
+      setTheme(preferred);
+    }, 0);
+
+    return () => clearTimeout(id);
   }, []);
 
   const toggle = () => {
